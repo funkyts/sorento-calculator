@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기아 쏘렌토 모의견적 계산기</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const SorentoCalculator = () => {
+          const [data, setData] = useState(null);
+          const [selectedModel, setSelectedModel] = useState('');
+          const [selectedTrim, setSelectedTrim] = useState('');
+          const [selectedOptions, setSelectedOptions] = useState([]);
+          const [paymentType, setPaymentType] = useState('cash');
+          const [loanPeriod, setLoanPeriod] = useState(60);
+          const [downPayment, setDownPayment] = useState(0);
+          const [loading, setLoading] = useState(true);
+
+          // 기본 모델 데이터
+          const baseModels = [
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', price: 3635, discountPrice: 3580 },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', price: 3951, discountPrice: 3891 },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '시그니처', price: 4232, discountPrice: 4168 },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: 'X-Line', price: 4326, discountPrice: 4260 },
+            { model: '터보 하이브리드(2WD)', trim: '프레스티지', price: 4058, discountPrice: 3996 },
+            { model: '터보 하이브리드(2WD)', trim: '노블레스', price: 4384, discountPrice: 4317 },
+            { model: '터보 하이브리드(2WD)', trim: '시그니처', price: 4637, discountPrice: 4567 },
+            { model: '터보 하이브리드(2WD)', trim: 'X-Line', price: 4731, discountPrice: 4659 },
+            { model: '터보 하이브리드(4WD)', trim: '프레스티지', price: 4290, discountPrice: 4225 },
+            { model: '터보 하이브리드(4WD)', trim: '노블레스', price: 4616, discountPrice: 4546 },
+            { model: '터보 하이브리드(4WD)', trim: '시그니처', price: 4869, discountPrice: 4795 },
+            { model: '터보 하이브리드(4WD)', trim: 'X-Line', price: 4963, discountPrice: 4888 }
+          ];
+
+          // 옵션 데이터
+          const optionsData = [
+            // 2.5 가솔린 터보/2.2 디젤 - 프레스티지
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: '전자식 AWD', price: 232, category: '구동계' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: '6인승', price: 84, category: '시트' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: '7인승', price: 69, category: '시트' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: '스타일 패키지', price: 124, category: '패키지' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: '컴포트 패키지', price: 59, category: '패키지' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: '12.3인치 클러스터', price: 59, category: '기술' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: '파노라마 선루프', price: 109, category: '외관' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '프레스티지', option: '19인치 휠', price: 30, category: '외관' },
+            
+            // 2.5 가솔린 터보/2.2 디젤 - 노블레스
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: '전자식 AWD', price: 232, category: '구동계' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: '6인승', price: 84, category: '시트' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: '7인승', price: 69, category: '시트' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: '스타일 패키지', price: 104, category: '패키지' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: '컴포트 패키지', price: 109, category: '패키지' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: '12.3인치 클러스터', price: 59, category: '기술' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: '파노라마 선루프', price: 109, category: '외관' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '노블레스', option: '19인치 휠', price: 30, category: '외관' },
+
+            // 2.5 가솔린 터보/2.2 디젤 - 시그니처
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '시그니처', option: '전자식 AWD', price: 232, category: '구동계' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '시그니처', option: '6인승', price: 84, category: '시트' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '시그니처', option: '7인승', price: 69, category: '시트' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '시그니처', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '시그니처', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '시그니처', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '시그니처', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: '시그니처', option: '파노라마 선루프', price: 109, category: '외관' },
+
+            // 2.5 가솔린 터보/2.2 디젤 - X-Line
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: 'X-Line', option: '전자식 AWD', price: 232, category: '구동계' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: 'X-Line', option: '6인승', price: 84, category: '시트' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: 'X-Line', option: '7인승', price: 69, category: '시트' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: 'X-Line', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: 'X-Line', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: 'X-Line', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: 'X-Line', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '2.5 가솔린 터보/2.2 디젤', trim: 'X-Line', option: '파노라마 선루프', price: 109, category: '외관' },
+
+            // 터보 하이브리드(2WD) - 프레스티지
+            { model: '터보 하이브리드(2WD)', trim: '프레스티지', option: '6인승', price: 84, category: '시트' },
+            { model: '터보 하이브리드(2WD)', trim: '프레스티지', option: '7인승', price: 69, category: '시트' },
+            { model: '터보 하이브리드(2WD)', trim: '프레스티지', option: '스타일 패키지', price: 124, category: '패키지' },
+            { model: '터보 하이브리드(2WD)', trim: '프레스티지', option: '컴포트 패키지', price: 59, category: '패키지' },
+            { model: '터보 하이브리드(2WD)', trim: '프레스티지', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '터보 하이브리드(2WD)', trim: '프레스티지', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '터보 하이브리드(2WD)', trim: '프레스티지', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '터보 하이브리드(2WD)', trim: '프레스티지', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '터보 하이브리드(2WD)', trim: '프레스티지', option: '파노라마 선루프', price: 109, category: '외관' },
+
+            // 터보 하이브리드(2WD) - 노블레스
+            { model: '터보 하이브리드(2WD)', trim: '노블레스', option: '6인승', price: 84, category: '시트' },
+            { model: '터보 하이브리드(2WD)', trim: '노블레스', option: '7인승', price: 69, category: '시트' },
+            { model: '터보 하이브리드(2WD)', trim: '노블레스', option: '스타일 패키지', price: 104, category: '패키지' },
+            { model: '터보 하이브리드(2WD)', trim: '노블레스', option: '컴포트 패키지', price: 109, category: '패키지' },
+            { model: '터보 하이브리드(2WD)', trim: '노블레스', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '터보 하이브리드(2WD)', trim: '노블레스', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '터보 하이브리드(2WD)', trim: '노블레스', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '터보 하이브리드(2WD)', trim: '노블레스', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '터보 하이브리드(2WD)', trim: '노블레스', option: '파노라마 선루프', price: 109, category: '외관' },
+
+            // 터보 하이브리드(2WD) - 시그니처
+            { model: '터보 하이브리드(2WD)', trim: '시그니처', option: '6인승', price: 84, category: '시트' },
+            { model: '터보 하이브리드(2WD)', trim: '시그니처', option: '7인승', price: 69, category: '시트' },
+            { model: '터보 하이브리드(2WD)', trim: '시그니처', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '터보 하이브리드(2WD)', trim: '시그니처', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '터보 하이브리드(2WD)', trim: '시그니처', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '터보 하이브리드(2WD)', trim: '시그니처', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '터보 하이브리드(2WD)', trim: '시그니처', option: '파노라마 선루프', price: 109, category: '외관' },
+
+            // 터보 하이브리드(2WD) - X-Line
+            { model: '터보 하이브리드(2WD)', trim: 'X-Line', option: '6인승', price: 84, category: '시트' },
+            { model: '터보 하이브리드(2WD)', trim: 'X-Line', option: '7인승', price: 69, category: '시트' },
+            { model: '터보 하이브리드(2WD)', trim: 'X-Line', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '터보 하이브리드(2WD)', trim: 'X-Line', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '터보 하이브리드(2WD)', trim: 'X-Line', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '터보 하이브리드(2WD)', trim: 'X-Line', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '터보 하이브리드(2WD)', trim: 'X-Line', option: '파노라마 선루프', price: 109, category: '외관' },
+
+            // 터보 하이브리드(4WD) - 프레스티지
+            { model: '터보 하이브리드(4WD)', trim: '프레스티지', option: '6인승', price: 84, category: '시트' },
+            { model: '터보 하이브리드(4WD)', trim: '프레스티지', option: '7인승', price: 69, category: '시트' },
+            { model: '터보 하이브리드(4WD)', trim: '프레스티지', option: '스타일 패키지', price: 124, category: '패키지' },
+            { model: '터보 하이브리드(4WD)', trim: '프레스티지', option: '컴포트 패키지', price: 59, category: '패키지' },
+            { model: '터보 하이브리드(4WD)', trim: '프레스티지', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '터보 하이브리드(4WD)', trim: '프레스티지', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '터보 하이브리드(4WD)', trim: '프레스티지', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '터보 하이브리드(4WD)', trim: '프레스티지', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '터보 하이브리드(4WD)', trim: '프레스티지', option: '파노라마 선루프', price: 109, category: '외관' },
+
+            // 터보 하이브리드(4WD) - 노블레스
+            { model: '터보 하이브리드(4WD)', trim: '노블레스', option: '6인승', price: 84, category: '시트' },
+            { model: '터보 하이브리드(4WD)', trim: '노블레스', option: '7인승', price: 69, category: '시트' },
+            { model: '터보 하이브리드(4WD)', trim: '노블레스', option: '스타일 패키지', price: 104, category: '패키지' },
+            { model: '터보 하이브리드(4WD)', trim: '노블레스', option: '컴포트 패키지', price: 109, category: '패키지' },
+            { model: '터보 하이브리드(4WD)', trim: '노블레스', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '터보 하이브리드(4WD)', trim: '노블레스', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '터보 하이브리드(4WD)', trim: '노블레스', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '터보 하이브리드(4WD)', trim: '노블레스', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '터보 하이브리드(4WD)', trim: '노블레스', option: '파노라마 선루프', price: 109, category: '외관' },
+
+            // 터보 하이브리드(4WD) - 시그니처
+            { model: '터보 하이브리드(4WD)', trim: '시그니처', option: '6인승', price: 84, category: '시트' },
+            { model: '터보 하이브리드(4WD)', trim: '시그니처', option: '7인승', price: 69, category: '시트' },
+            { model: '터보 하이브리드(4WD)', trim: '시그니처', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '터보 하이브리드(4WD)', trim: '시그니처', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '터보 하이브리드(4WD)', trim: '시그니처', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '터보 하이브리드(4WD)', trim: '시그니처', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '터보 하이브리드(4WD)', trim: '시그니처', option: '파노라마 선루프', price: 109, category: '외관' },
+
+            // 터보 하이브리드(4WD) - X-Line
+            { model: '터보 하이브리드(4WD)', trim: 'X-Line', option: '6인승', price: 84, category: '시트' },
+            { model: '터보 하이브리드(4WD)', trim: 'X-Line', option: '7인승', price: 69, category: '시트' },
+            { model: '터보 하이브리드(4WD)', trim: 'X-Line', option: '드라이브 와이즈', price: 129, category: '안전' },
+            { model: '터보 하이브리드(4WD)', trim: 'X-Line', option: 'HUD + 빌트인 캠2', price: 119, category: '기술' },
+            { model: '터보 하이브리드(4WD)', trim: 'X-Line', option: '스마트 커넥트', price: 70, category: '기술' },
+            { model: '터보 하이브리드(4WD)', trim: 'X-Line', option: 'KRELL 프리미엄 사운드', price: 64, category: '오디오' },
+            { model: '터보 하이브리드(4WD)', trim: 'X-Line', option: '파노라마 선루프', price: 109, category: '외관' }
+          ];
+
+          // 세금 및 금리 변수
+          const taxVars = {
+            individualTax: 0.05,
+            educationTax: 0.30,
+            vat: 0.10,
+            acquisitionTax: 0.07,
+            loanRate: 0.06,
+            rentRate: 0.012,
+            leaseRate: 0.01,
+            residualValue: 0.40
+          };
+
+          useEffect(() => {
+            setTimeout(() => {
+              setData({ baseModels, optionsData, taxVars });
+              setLoading(false);
+            }, 1000);
+          }, []);
+
+          const getAvailableModels = () => {
+            if (!data) return [];
+            return [...new Set(data.baseModels.map(item => item.model))];
+          };
+
+          const getAvailableTrims = () => {
+            if (!data || !selectedModel) return [];
+            return data.baseModels
+              .filter(item => item.model === selectedModel)
+              .map(item => item.trim);
+          };
+
+          const getBasePrice = () => {
+            if (!data || !selectedModel || !selectedTrim) return 0;
+            const vehicle = data.baseModels.find(item => 
+              item.model === selectedModel && item.trim === selectedTrim
+            );
+            return vehicle ? vehicle.discountPrice : 0;
+          };
+
+          const getAvailableOptions = () => {
+            if (!data || !selectedModel || !selectedTrim) return [];
+            return data.optionsData.filter(item => 
+              item.model === selectedModel && item.trim === selectedTrim
+            );
+          };
+
+          const calculateTotalPrice = () => {
+            try {
+              const basePrice = getBasePrice();
+              const optionTotal = selectedOptions.reduce((sum, opt) => sum + opt.price, 0);
+              const vehiclePrice = basePrice + optionTotal;
+
+              const individualTax = vehiclePrice * taxVars.individualTax;
+              const educationTax = individualTax * taxVars.educationTax;
+              const taxableAmount = vehiclePrice + individualTax + educationTax;
+              const vat = taxableAmount * taxVars.vat;
+              const acquisitionTax = (taxableAmount + vat) * taxVars.acquisitionTax;
+
+              const totalPrice = vehiclePrice + individualTax + educationTax + vat + acquisitionTax;
+
+              return {
+                basePrice: Math.round(basePrice),
+                optionTotal: Math.round(optionTotal),
+                vehiclePrice: Math.round(vehiclePrice),
+                individualTax: Math.round(individualTax),
+                educationTax: Math.round(educationTax),
+                vat: Math.round(vat),
+                acquisitionTax: Math.round(acquisitionTax),
+                totalTax: Math.round(individualTax + educationTax + vat + acquisitionTax),
+                totalPrice: Math.round(totalPrice)
+              };
+            } catch (error) {
+              return {
+                basePrice: 0, optionTotal: 0, vehiclePrice: 0,
+                individualTax: 0, educationTax: 0, vat: 0,
+                acquisitionTax: 0, totalTax: 0, totalPrice: 0
+              };
+            }
+          };
+
+          const calculatePayment = () => {
+            try {
+              const { totalPrice } = calculateTotalPrice();
+              
+              if (paymentType === 'cash') {
+                return { monthlyPayment: 0, note: '현금 일시불' };
+              }
+              
+              if (paymentType === 'loan') {
+                const loanAmount = totalPrice - downPayment;
+                if (loanAmount <= 0) {
+                  return { monthlyPayment: 0, note: '선수금이 총액보다 큽니다' };
+                }
+                const monthlyRate = taxVars.loanRate / 12;
+                const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, loanPeriod)) / 
+                                     (Math.pow(1 + monthlyRate, loanPeriod) - 1);
+                return { 
+                  monthlyPayment: Math.round(monthlyPayment), 
+                  note: `${loanPeriod}개월 할부 (연 6%)` 
+                };
+              }
+              
+              if (paymentType === 'rent') {
+                const monthlyPayment = totalPrice * taxVars.rentRate;
+                return { 
+                  monthlyPayment: Math.round(monthlyPayment), 
+                  note: '렌트 (월 1.2%)' 
+                };
+              }
+              
+              if (paymentType === 'lease') {
+                const depreciation = (totalPrice * (1 - taxVars.residualValue)) / 36;
+                const financeCharge = totalPrice * taxVars.leaseRate;
+                const monthlyPayment = depreciation + financeCharge;
+                return { 
+                  monthlyPayment: Math.round(monthlyPayment), 
+                  note: '리스 36개월 (잔존가치 40%)' 
+                };
+              }
+              
+              return { monthlyPayment: 0, note: '' };
+            } catch (error) {
+              return { monthlyPayment: 0, note: '계산 오류' };
+            }
+          };
+
+          const handleOptionToggle = (option) => {
+            const isSelected = selectedOptions.some(opt => opt.option === option.option);
+            if (isSelected) {
+              setSelectedOptions(selectedOptions.filter(opt => opt.option !== option.option));
+            } else {
+              setSelectedOptions([...selectedOptions, option]);
+            }
+          };
+
+          const groupOptionsByCategory = () => {
+            try {
+              const options = getAvailableOptions();
+              const grouped = {};
+              options.forEach(option => {
+                if (!grouped[option.category]) {
+                  grouped[option.category] = [];
+                }
+                grouped[option.category].push(option);
+              });
+              return grouped;
+            } catch (error) {
+              return {};
+            }
+          };
+
+          if (loading) {
+            return React.createElement('div', { 
+              className: 'min-h-screen bg-gray-50 flex items-center justify-center' 
+            }, 
+              React.createElement('div', { className: 'text-center' },
+                React.createElement('div', { className: 'text-6xl mb-4 animate-pulse' }, '🚗'),
+                React.createElement('p', { className: 'text-lg text-gray-600' }, '쏘렌토 견적 시스템을 로딩 중...')
+              )
+            );
+          }
+
+          const priceInfo = calculateTotalPrice();
+          const paymentInfo = calculatePayment();
+          const groupedOptions = groupOptionsByCategory();
+
+          return React.createElement('div', { className: 'min-h-screen bg-gray-50' },
+            
+            React.createElement('header', { className: 'bg-white shadow-sm border-b' },
+              React.createElement('div', { className: 'max-w-7xl mx-auto px-4 py-6' },
+                React.createElement('div', { className: 'flex items-center space-x-3' },
+                  React.createElement('div', { className: 'text-3xl' }, '🚗'),
+                  React.createElement('h1', { className: 'text-2xl font-bold text-gray-900' }, '기아 쏘렌토 모의견적')
+                ),
+                React.createElement('p', { className: 'text-gray-600 mt-2' }, '원하는 모델과 옵션을 선택하여 정확한 견적을 확인하세요')
+              )
+            ),
+
+            React.createElement('div', { className: 'max-w-7xl mx-auto px-4 py-8' },
+              React.createElement('div', { className: 'grid grid-cols-1 lg:grid-cols-3 gap-8' },
+                
+                React.createElement('div', { className: 'lg:col-span-2 space-y-6' },
+                  
+                  React.createElement('div', { className: 'bg-white rounded-lg shadow-sm p-6' },
+                    React.createElement('h2', { className: 'text-xl font-semibold mb-4' }, '차량 선택'),
+                    
+                    React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+                      React.createElement('div', {},
+                        React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-2' }, '엔진 타입'),
+                        React.createElement('select', {
+                          className: 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                          value: selectedModel,
+                          onChange: (e) => {
+                            setSelectedModel(e.target.value);
+                            setSelectedTrim('');
+                            setSelectedOptions([]);
+                          }
+                        },
+                          React.createElement('option', { value: '' }, '엔진 타입을 선택하세요'),
+                          getAvailableModels().map(model => 
+                            React.createElement('option', { key: model, value: model }, model)
+                          )
+                        )
+                      ),
+                      
+                      React.createElement('div', {},
+                        React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-2' }, '트림'),
+                        React.createElement('select', {
+                          className: 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                          value: selectedTrim,
+                          disabled: !selectedModel,
+                          onChange: (e) => {
+                            setSelectedTrim(e.target.value);
+                            setSelectedOptions([]);
+                          }
+                        },
+                          React.createElement('option', { value: '' }, '트림을 선택하세요'),
+                          getAvailableTrims().map(trim => 
+                            React.createElement('option', { key: trim, value: trim }, trim)
+                          )
+                        )
+                      )
+                    ),
+                    
+                    selectedModel && selectedTrim && React.createElement('div', { className: 'mt-4 p-4 bg-blue-50 rounded-lg' },
+                      React.createElement('p', { className: 'text-sm text-gray-600' }, '기본 차량 가격'),
+                      React.createElement('p', { className: 'text-2xl font-bold text-blue-600' }, `${getBasePrice().toLocaleString()}만원`)
+                    )
+                  ),
+
+                  selectedModel && selectedTrim && React.createElement('div', { className: 'bg-white rounded-lg shadow-sm p-6' },
+                    React.createElement('h2', { className: 'text-xl font-semibold mb-4' }, '옵션 선택'),
+                    
+                    Object.entries(groupedOptions).map(([category, options]) =>
+                      React.createElement('div', { key: category, className: 'mb-6' },
+                        React.createElement('h3', { className: 'text-lg font-medium text-gray-800 mb-3' }, category),
+                        React.createElement('div', { className: 'space-y-2' },
+                          options.map(option =>
+                            React.createElement('label', { 
+                              key: option.option, 
+                              className: 'flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer' 
+                            },
+                              React.createElement('input', {
+                                type: 'checkbox',
+                                className: 'w-5 h-5 text-blue-600 rounded focus:ring-blue-500',
+                                checked: selectedOptions.some(opt => opt.option === option.option),
+                                onChange: () => handleOptionToggle(option)
+                              }),
+                              React.createElement('div', { className: 'ml-3 flex-1 flex justify-between' },
+                                React.createElement('span', { className: 'text-gray-900' }, option.option),
+                                React.createElement('span', { className: 'text-blue-600 font-medium' }, `+${option.price.toLocaleString()}만원`)
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  ),
+
+                  selectedModel && selectedTrim && React.createElement('div', { className: 'bg-white rounded-lg shadow-sm p-6' },
+                    React.createElement('h2', { className: 'text-xl font-semibold mb-4' }, '구매 방식'),
+                    
+                    React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-3 mb-4' },
+                      [
+                        { id: 'cash', label: '현금' },
+                        { id: 'loan', label: '할부' },
+                        { id: 'rent', label: '렌트' },
+                        { id: 'lease', label: '리스' }
+                      ].map(type =>
+                        React.createElement('button', {
+                          key: type.id,
+                          className: `p-3 border rounded-lg font-medium transition-colors ${
+                            paymentType === type.id 
+                              ? 'bg-blue-600 text-white border-blue-600' 
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`,
+                          onClick: () => setPaymentType(type.id)
+                        }, type.label)
+                      )
+                    ),
+
+                    paymentType === 'loan' && React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+                      React.createElement('div', {},
+                        React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-2' }, '할부 기간'),
+                        React.createElement('select', {
+                          className: 'w-full p-3 border border-gray-300 rounded-lg',
+                          value: loanPeriod,
+                          onChange: (e) => setLoanPeriod(Number(e.target.value))
+                        },
+                          React.createElement('option', { value: 36 }, '36개월'),
+                          React.createElement('option', { value: 48 }, '48개월'),
+                          React.createElement('option', { value: 60 }, '60개월'),
+                          React.createElement('option', { value: 72 }, '72개월')
+                        )
+                      ),
+                      React.createElement('div', {},
+                        React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-2' }, '선수금 (만원)'),
+                        React.createElement('input', {
+                          type: 'number',
+                          className: 'w-full p-3 border border-gray-300 rounded-lg',
+                          value: downPayment,
+                          onChange: (e) => setDownPayment(Number(e.target.value)),
+                          placeholder: '0'
+                        })
+                      )
+                    )
+                  )
+                ),
+
+                React.createElement('div', { className: 'space-y-6' },
+                  React.createElement('div', { className: 'bg-white rounded-lg shadow-sm p-6 sticky top-4' },
+                    React.createElement('div', { className: 'flex items-center justify-between mb-4' },
+                      React.createElement('h2', { className: 'text-xl font-semibold' }, '견적 결과'),
+                      React.createElement('div', { className: 'text-2xl' }, '🧮')
+                    ),
+
+                    selectedModel && selectedTrim ? React.createElement('div', { className: 'space-y-4' },
+                      React.createElement('div', { className: 'pb-4 border-b' },
+                        React.createElement('p', { className: 'text-sm text-gray-600' }, '선택 차량'),
+                        React.createElement('p', { className: 'font-medium' }, selectedModel),
+                        React.createElement('p', { className: 'text-sm text-gray-600' }, selectedTrim)
+                      ),
+
+                      React.createElement('div', { className: 'space-y-2' },
+                        React.createElement('div', { className: 'flex justify-between' },
+                          React.createElement('span', { className: 'text-gray-600' }, '기본 차량가격'),
+                          React.createElement('span', {}, `${priceInfo.basePrice.toLocaleString()}만원`)
+                        ),
+                        priceInfo.optionTotal > 0 && React.createElement('div', { className: 'flex justify-between' },
+                          React.createElement('span', { className: 'text-gray-600' }, '옵션 총액'),
+                          React.createElement('span', {}, `+${priceInfo.optionTotal.toLocaleString()}만원`)
+                        ),
+                        React.createElement('div', { className: 'flex justify-between border-t pt-2' },
+                          React.createElement('span', { className: 'text-gray-600' }, '차량가격 합계'),
+                          React.createElement('span', { className: 'font-medium' }, `${priceInfo.vehiclePrice.toLocaleString()}만원`)
+                        )
+                      ),
+
+                      React.createElement('div', { className: 'space-y-2 pt-4 border-t' },
+                        React.createElement('p', { className: 'text-sm font-medium text-gray-700' }, '세금 내역'),
+                        React.createElement('div', { className: 'text-sm space-y-1' },
+                          React.createElement('div', { className: 'flex justify-between' },
+                            React.createElement('span', { className: 'text-gray-600' }, '개별소비세 (5%)'),
+                            React.createElement('span', {}, `${priceInfo.individualTax.toLocaleString()}만원`)
+                          ),
+                          React.createElement('div', { className: 'flex justify-between' },
+                            React.createElement('span', { className: 'text-gray-600' }, '교육세 (30%)'),
+                            React.createElement('span', {}, `${priceInfo.educationTax.toLocaleString()}만원`)
+                          ),
+                          React.createElement('div', { className: 'flex justify-between' },
+                            React.createElement('span', { className: 'text-gray-600' }, '부가세 (10%)'),
+                            React.createElement('span', {}, `${priceInfo.vat.toLocaleString()}만원`)
+                          ),
+                          React.createElement('div', { className: 'flex justify-between' },
+                            React.createElement('span', { className: 'text-gray-600' }, '취득세 (7%)'),
+                            React.createElement('span', {}, `${priceInfo.acquisitionTax.toLocaleString()}만원`)
+                          )
+                        )
+                      ),
+
+                      React.createElement('div', { className: 'bg-blue-50 p-4 rounded-lg' },
+                        React.createElement('div', { className: 'flex justify-between items-center' },
+                          React.createElement('span', { className: 'text-lg font-semibold' }, '총 차량 가격'),
+                          React.createElement('span', { className: 'text-2xl font-bold text-blue-600' }, 
+                            `${priceInfo.totalPrice.toLocaleString()}만원`
+                          )
+                        )
+                      ),
+
+                      paymentType !== 'cash' && paymentInfo.monthlyPayment > 0 && React.createElement('div', { className: 'bg-green-50 p-4 rounded-lg' },
+                        React.createElement('div', { className: 'text-center' },
+                          React.createElement('p', { className: 'text-sm text-gray-600' }, paymentInfo.note),
+                          React.createElement('p', { className: 'text-xl font-bold text-green-600' }, 
+                            `월 ${paymentInfo.monthlyPayment.toLocaleString()}만원`
+                          )
+                        )
+                      ),
+
+                      React.createElement('div', { className: 'pt-4' },
+                        React.createElement('button', {
+                          className: 'w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 flex items-center justify-center space-x-2 transition-colors',
+                          onClick: () => window.open('https://chabigyo.com/%EC%B9%B4%EB%A7%88%EC%8A%A4%ED%84%B0-%EC%96%91%ED%9D%AC%EC%9B%85-%EC%83%81%EB%8B%B4-%EB%8C%80%EA%B8%B0-%EC%8B%A0%EC%B2%AD-%ED%8E%98%EC%9D%B4%EC%A7%80/', '_blank')
+                        },
+                          React.createElement('span', {}, '💬'),
+                          React.createElement('span', {}, '내게 더 맞는 견적 상담받기')
+                        )
+                      )
+                    ) : React.createElement('div', { className: 'text-center py-8' },
+                      React.createElement('div', { className: 'text-6xl text-gray-300 mb-4' }, '🚗'),
+                      React.createElement('p', { className: 'text-gray-500' }, 
+                        '차량을 선택하시면', 
+                        React.createElement('br'), 
+                        '견적을 확인할 수 있습니다'
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          );
+        };
+
+        ReactDOM.render(React.createElement(SorentoCalculator), document.getElementById('root'));
+    </script>
+</body>
+</html>
